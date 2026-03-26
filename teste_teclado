@@ -1,0 +1,93 @@
+
+#include <LiquidCrystal.h>
+#include <Keypad.h>
+#include <WiFi.h>
+#include <WebServer.h>
+
+// ================== LCD (HD44780 4-bit) ==================
+LiquidCrystal lcd(21, 22, 26, 27, 14, 13); // RS,E,D4,D5,D6,D7
+
+// ================== Teclado 3x4 ==================
+const byte ROWS = 4, COLS = 3;
+char keys[ROWS][COLS] = {
+  {'#','0','*'},
+  {'9','8','7'},
+  {'6','5','4'},
+  {'3','2','1'}
+};
+// R1,R2,R3,R4  /  C1,C2,C3
+// ORDEM CORRETA NA PLAQUINHA
+// 18 5 33 4 25 21 23
+// PINO 19 COM PROBLEMA
+byte rowPins[ROWS] = {21, 18, 5, 4};   // linhas
+byte colPins[COLS] = {25, 23, 33};     // colunas
+Keypad keypad = Keypad(makeKeymap(keys), rowPins, colPins, ROWS, COLS);
+
+// ================== Pinos físicos ==================
+
+const int BUZZER_PIN = 2;   // ALTERADA
+const int RELAY_PIN  = 15;  // ALTERADO
+const int LDR_PIN    = 34;  // VERIFICAR
+
+// ================== Estados (FSM) ==================
+enum Estado : uint8_t {
+  EST_PARADA = 1,          // "Esteira Parada"
+  EST_CONFIG = 2,          // "Inserir quantidade:"
+  EST_CONTANDO = 3,        // "Contagem de camisetas Iniciada"
+  EST_LIMITE = 4,          // "Limite de camisetas atingida"
+  EST_ABORTADA = 5,        // "Contagem abortada"
+  EST_INDEFINIDA = 6       // "Contagem Indefinida"
+};
+
+Estado estado = EST_PARADA;
+
+// ================== Variáveis de contagem/estado ==================
+unsigned int alvo = 0;           // quantidade a atingir (modo finito)  -- equivale metaLDR
+unsigned int contagem = 0;       // contagem atual
+String bufferQtd = "";           // entrada numérica no estado 2 (até 5 dígitos)
+
+// Para exibir "x Camisetas contadas" ao abortar contagem indefinida
+bool abortHasCount = false;
+unsigned int lastAbortCount = 0;
+
+// Variáveis físicas
+bool esteiraLigada = false;   // controla RELAY_PIN
+bool metaAtingida = false;    // já alcançou o alvo
+bool buzzerLigado = false;    // estado do buzzer (ligado/desligado)
+
+// ================== LDR / debounce ==================
+int ldrBaseValue = 3000; // valor médio de luz com esteira ligada (calibração -> verificar)
+float ldrFactor = 0.7;   // threshold = base * factor
+int ldrThreshold = 2000;
+
+int ultimoLdrEstado = HIGH; // 1 = não-luz-obstrucao, 0 = obstruído (baixo)
+unsigned long ultimoDebounce = 0;
+unsigned long debounceDelay = 300; // ms
+
+
+void setup() {
+  // put your setup code here, to run once:
+  Serial.begin(115200);
+
+  // LCD
+  lcd.begin(16, 2);
+  // mostrarEstadoParada();
+
+  // Pinos
+  pinMode(BUZZER_PIN, OUTPUT);
+  pinMode(RELAY_PIN, OUTPUT);
+  // LDR_PIN (34) é ADC, não precisa pinMode, mas não faz mal:
+  pinMode(LDR_PIN, INPUT);
+
+  digitalWrite(BUZZER_PIN, LOW);
+  digitalWrite(RELAY_PIN, LOW);
+
+}
+
+void loop() {
+  char k = keypad.getKey();
+  
+  if(k){
+    Serial.println(k);
+  }
+}
