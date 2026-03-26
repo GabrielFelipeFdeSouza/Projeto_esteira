@@ -17,9 +17,9 @@ char keys[ROWS][COLS] = {
 };
 // R1,R2,R3,R4  /  C1,C2,C3
 // ORDEM CORRETA NA PLAQUINHA
-// 18 5 33 4 25 21 23
+// 18 5 33 4 25 32 23
 // PINO 19 COM PROBLEMA
-byte rowPins[ROWS] = {21, 18, 5, 4};   // linhas
+byte rowPins[ROWS] = {32, 18, 5, 4};   // linhas
 byte colPins[COLS] = {25, 23, 33};     // colunas
 Keypad keypad = Keypad(makeKeymap(keys), rowPins, colPins, ROWS, COLS);
 
